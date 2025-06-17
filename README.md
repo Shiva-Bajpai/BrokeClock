@@ -31,6 +31,4 @@ The application will automatically:
 - Provide a clear financial outlook
 - Show detailed statistics about your financial health
 
-## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
