@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>brokeclock</title>
+
+    <!-- Favicons -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="/favicon/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/favicon/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="/favicon/site.webmanifest" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@heroicons/v1/outline/"></script>
+    <style>
+      .shadcn-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+      }
+      .shadcn-input:hover {
+        border-color: #8ecae6;
+      }
+      .shadcn-input:focus {
+        outline: none;
+        border-color: #219ebc;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.2);
+      }
+      .shadcn-button {
+        padding: 0.5rem 1rem;
+        background-color: #fb8500;
+        color: white;
+        border-radius: 0.375rem;
+      }
+      .shadcn-button:hover {
+        background-color: #ffb703;
+      }
+      .shadcn-card {
+        padding: 2rem;
+        background-color: white;
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(2, 48, 71, 0.05),
+                    0 10px 10px -5px rgba(2, 48, 71, 0.02);
+        border: 1px solid rgba(142, 202, 230, 0.1);
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0.7;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Add color variables */
+      :root {
+        --sky-blue: #8ecae6;
+        --blue-green: #219ebc;
+        --prussian-blue: #023047;
+        --selective-yellow: #ffb703;
+        --ut-orange: #fb8500;
+      }
+
+      /* Add logo styles */
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        height: 2.5rem;
+      }
+
+      .logo {
+        position: relative;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          var(--ut-orange),
+          var(--selective-yellow)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px -1px rgba(2, 48, 71, 0.1);
+      }
+
+      .logo::before {
+        content: "";
+        position: absolute;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid var(--prussian-blue);
+        border-radius: 50%;
+        border-top-color: transparent;
+        transform: rotate(-45deg);
+      }
+
+      .logo::after {
+        content: "";
+        position: absolute;
+        width: 0.25rem;
+        height: 0.75rem;
+        background-color: var(--prussian-blue);
+        transform: translateY(-0.25rem);
+      }
+
+      .app-name {
+        font-size: 2.25rem;
+        font-weight: 800;
+        background: linear-gradient(
+          135deg,
+          var(--ut-orange),
+          var(--selective-yellow)
+        );
+        -webkit-background-clip: text;
+        color: transparent;
+        letter-spacing: -0.05em;
+      }
+
+      /* Add these new styles */
+      .bg-prussian-blue {
+        background-color: var(--prussian-blue);
+      }
+
+      .text-selective-yellow {
+        color: var(--selective-yellow);
+      }
+
+      .section-title {
+        color: var(--prussian-blue);
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding-left: 1rem;
+      }
+
+      .section-title::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 1.5rem;
+        background: linear-gradient(to bottom, var(--ut-orange), var(--selective-yellow));
+        border-radius: 2px;
+      }
+
+      .results-card {
+        background: linear-gradient(135deg, #219ebc, #8ecae6);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(33, 158, 188, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .results-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+        z-index: 1;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.25rem;
+        border-radius: 0.75rem;
+        border: 2px solid rgba(255, 183, 3, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px -3px rgba(2, 48, 71, 0.05);
+      }
+
+      .balance-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        border: 2px solid rgba(33, 158, 188, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      .balance-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px -3px rgba(2, 48, 71, 0.05);
+      }
+
+      .balance-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+        transition: color 0.3s ease;
+      }
+
+      .balance-value.positive {
+        color: var(--blue-green);
+      }
+
+      .balance-value.negative {
+        color: var(--ut-orange);
+      }
+
+      .balance-indicator-container {
+        margin-top: 1rem;
+        background: rgba(226, 232, 240, 0.5);
+        border-radius: 9999px;
+        height: 0.5rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .balance-indicator-bar {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 9999px;
+      }
+
+      .balance-indicator-bar.positive {
+        background: linear-gradient(90deg, var(--blue-green), var(--sky-blue));
+      }
+
+      .balance-indicator-bar.negative {
+        background: linear-gradient(90deg, var(--ut-orange), var(--selective-yellow));
+      }
+
+      .balance-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--prussian-blue);
+        opacity: 0.7;
+      }
+
+      .input-label {
+        color: var(--prussian-blue);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1.25rem;
+        height: 1.25rem;
+        color: var(--prussian-blue);
+        opacity: 0.5;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .input-with-icon {
+        padding-left: 3rem !important;
+        width: 100%;
+      }
+
+      .card-icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: var(--prussian-blue);
+        opacity: 0.7;
+      }
+
+      .results-icon {
+        width: 1.75rem;
+        height: 1.75rem;
+        color: white;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-card-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        color: var(--ut-orange);
+        margin-bottom: 0.5rem;
+      }
+
+      .currency-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        background-color: white;
+        color: var(--prussian-blue);
+        cursor: pointer;
+      }
+      
+      .currency-select:hover {
+        border-color: #8ecae6;
+      }
+      
+      .currency-select:focus {
+        outline: none;
+        border-color: #219ebc;
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.2);
+      }
+
+      .shadcn-input::-webkit-outer-spin-button,
+      .shadcn-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .shadcn-input[type="number"] {
+        -moz-appearance: textfield;
+      }
+
+      .shadcn-input.error {
+        border-color: #ef4444;
+      }
+
+      .shadcn-input.error:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+      }
+
+      .error-message {
+        color: #ef4444;
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+      }
+
+      .currency-select.input-with-icon {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23023047'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+        padding-right: 3rem;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 py-6 px-8 mb-12">
+      <div class="max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-center justify-between">
+          <div class="logo-container">
+            <div class="logo"></div>
+            <h1 class="app-name">brokeclock</h1>
+          </div>
+          <p class="text-prussian-blue mt-2 sm:mt-0 text-sm font-medium opacity-75">
+            Track your savings, plan your future
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow px-8 pb-12">
+      <div class="max-w-4xl mx-auto space-y-8">
+        <div class="shadcn-card">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h2 class="section-title">Financial Inputs</h2>
+              <div class="space-y-6">
+                <div>
+                  <label class="input-label">Currency</label>
+                  <div class="input-group">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <select id="currencySelect" class="currency-select input-with-icon">
+                      <option value="USD">US Dollar ($)</option>
+                      <option value="EUR">Euro (€)</option>
+                      <option value="GBP">British Pound (£)</option>
+                      <option value="JPY">Japanese Yen (¥)</option>
+                      <option value="AUD">Australian Dollar (A$)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="input-label">Current Savings ($)</label>
+                  <div class="input-group">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <input
+                      type="number"
+                      id="currentSavings"
+                      class="shadcn-input input-with-icon"
+                      placeholder="e.g., 50000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="input-label">Monthly Income ($)</label>
+                  <div class="input-group">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <input
+                      type="number"
+                      id="monthlyIncome"
+                      class="shadcn-input input-with-icon"
+                      placeholder="e.g., 4000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="input-label">Monthly Expenses ($)</label>
+                  <div class="input-group">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <input
+                      type="number"
+                      id="monthlyExpenses"
+                      class="shadcn-input input-with-icon"
+                      placeholder="e.g., 3000"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h2 class="section-title">Results</h2>
+              <div id="results" class="space-y-6">
+                <div class="results-card">
+                  <svg class="results-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 class="text-white font-medium mb-2" id="timeRemainingLabel">
+                    Financial Outlook
+                  </h3>
+                  <p id="timeRemaining" class="text-4xl font-bold text-white">-</p>
+                  <p id="timeRemainingSubtext" class="text-white text-sm mt-2 opacity-80">-</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="stat-card">
+                    <svg class="stat-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="font-medium mb-2 text-prussian-blue">
+                      Monthly Income
+                    </h3>
+                    <p
+                      id="monthlyIncomeDisplay"
+                      class="text-lg font-semibold text-ut-orange"
+                    >
+                      $0
+                    </p>
+                  </div>
+
+                  <div class="stat-card">
+                    <svg class="stat-card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <h3 class="font-medium mb-2 text-prussian-blue">
+                      Monthly Expenses
+                    </h3>
+                    <p
+                      id="monthlyExpensesDisplay"
+                      class="text-lg font-semibold text-ut-orange"
+                    >
+                      $0
+                    </p>
+                  </div>
+                </div>
+
+                <div class="balance-card">
+                  <div class="flex items-center gap-2 mb-2">
+                    <svg class="card-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <h3 class="font-medium text-prussian-blue">Monthly Balance</h3>
+                  </div>
+                  <p id="monthlyBalance" class="balance-value">-</p>
+                  <div class="balance-indicator-container">
+                    <div id="balanceIndicator" class="balance-indicator-bar" style="width: 0%"></div>
+                  </div>
+                  <div class="balance-label">
+                    <span id="balancePercentage">0%</span>
+                    <span id="balanceLabel">of monthly income</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="shadcn-card">
+          <h2 class="section-title">Savings Projection</h2>
+          <div class="mt-6">
+            <canvas id="savingsChart" class="w-full h-72"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-prussian-blue text-white py-8 px-8 mt-8">
+      <div class="max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="logo w-8 h-8"></div>
+              <span class="font-bold text-selective-yellow">brokeclock</span>
+            </div>
+            <p class="text-sm text-gray-300">
+              Making financial planning simple and accessible for everyone.
+            </p>
+          </div>
+          
+          <div>
+            <h3 class="text-selective-yellow font-semibold mb-4">Connect</h3>
+            <div class="flex gap-4">
+              <a href="https://x.com/sb__Codes" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-sky-blue transition-colors">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                </svg>
+              </a>
+              <a href="https://shivacodes.vercel.apps" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-sky-blue transition-colors">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253m0 0A17.919 17.919 0 0112 7.5c3.162 0 6.133.815 8.716 2.247" />
+                </svg>
+              </a>
+            </div>
+            <p class="text-sm text-gray-300 mt-4">
+              © 
+              <a href="https://manuelalferez.com" target="_blank" rel="noopener noreferrer" class="text-sky-blue transition-colors">
+                Shiva Bajpai
+              </a>
+              <br/>
+              All rights reserved.
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      let savingsChart;
+
+      // Initialize with empty chart on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        updateCurrencyLabels();
+        updateChart([0]);
+        calculateDuration();
+      });
+
+      // Debounce function to limit calculation frequency
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      // Debounced calculation
+      const debouncedCalculate = debounce(calculateDuration, 100);
+
+      // Add event listeners to all inputs
+      document.querySelectorAll('input[type="number"]').forEach((input) => {
+        input.addEventListener("input", debouncedCalculate);
+        input.addEventListener("change", debouncedCalculate);
+      });
+
+      // Currency symbols mapping
+      const currencySymbols = {
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        JPY: '¥',
+        AUD: 'A$'
+      };
+
+      // Get current currency symbol
+      function getCurrencySymbol() {
+        const currency = document.getElementById('currencySelect').value;
+        return currencySymbols[currency];
+      }
+
+      // Update the currency format function
+      function formatCurrency(value) {
+        const symbol = getCurrencySymbol();
+        return `${symbol}${value.toLocaleString()}`;
+      }
+
+      // Add event listener for currency change
+      document.getElementById('currencySelect').addEventListener('change', function() {
+        updateCurrencyLabels();
+        calculateDuration();
+      });
+
+      function calculateDuration() {
+        const currentSavings =
+          parseFloat(document.getElementById("currentSavings").value) || 0;
+        const monthlyIncome =
+          parseFloat(document.getElementById("monthlyIncome").value) || 0;
+        const monthlyExpenses =
+          parseFloat(document.getElementById("monthlyExpenses").value) || 0;
+
+        // Update displays with new currency format
+        document.getElementById("monthlyIncomeDisplay").textContent = 
+          formatCurrency(monthlyIncome);
+        document.getElementById("monthlyExpensesDisplay").textContent = 
+          formatCurrency(monthlyExpenses);
+
+        let savings = currentSavings;
+        let months = 0;
+        const monthlyNet = monthlyIncome - monthlyExpenses;
+        const projectedBalances = [savings];
+
+        if (monthlyNet < 0) {
+          while (savings > 0 && months < 1200) {
+            savings += monthlyNet;
+            projectedBalances.push(Math.max(0, savings));
+            months++;
+          }
+        } else {
+          // If saving money, project for 5 years
+          for (let i = 0; i < 60; i++) {
+            savings += monthlyNet;
+            projectedBalances.push(savings);
+            months++;
+          }
+        }
+
+        let timeText = "";
+        let subText = "";
+        
+        if (monthlyNet >= 0) {
+          if (currentSavings === 0) {
+            timeText = "Starting to Save";
+            subText = `Saving ${formatCurrency(monthlyNet)} monthly`;
+          } else {
+            timeText = "Growing Savings";
+            subText = `${formatCurrency(currentSavings)} growing by ${formatCurrency(monthlyNet)} monthly`;
+          }
+        } else {
+          if (months >= 1200) {
+            timeText = "Sustainable";
+            subText = `Current savings can cover expenses indefinitely`;
+          } else if (months === 0) {
+            timeText = "Critical";
+            subText = "Savings depleted in less than a month";
+          } else {
+            const years = Math.floor(months / 12);
+            const remainingMonths = months % 12;
+            
+            timeText = "Alert";
+            
+            if (years > 0) {
+              subText = `Savings will last ${years} ${years === 1 ? "year" : "years"}`;
+              if (remainingMonths > 0) {
+                subText += ` and ${remainingMonths} ${remainingMonths === 1 ? "month" : "months"}`;
+              }
+            } else {
+              subText = `Savings will last ${remainingMonths} ${remainingMonths === 1 ? "month" : "months"}`;
+            }
+          }
+        }
+
+        document.getElementById("timeRemaining").textContent = timeText;
+        document.getElementById("timeRemainingSubtext").textContent = subText;
+
+        const monthlyBalanceElement = document.getElementById("monthlyBalance");
+        const balanceIndicator = document.getElementById("balanceIndicator");
+        const balancePercentage = document.getElementById("balancePercentage");
+        
+        if (monthlyNet >= 0) {
+          monthlyBalanceElement.className = "balance-value positive";
+          balanceIndicator.className = "balance-indicator-bar positive";
+          const percentage = Math.min((monthlyNet / monthlyIncome) * 100, 100);
+          balanceIndicator.style.width = percentage + "%";
+          balancePercentage.textContent = `${Math.round(percentage)}% savings`;
+        } else {
+          monthlyBalanceElement.className = "balance-value negative";
+          balanceIndicator.className = "balance-indicator-bar negative";
+          const percentage = Math.min((Math.abs(monthlyNet) / monthlyIncome) * 100, 100);
+          balanceIndicator.style.width = percentage + "%";
+          balancePercentage.textContent = `${Math.round(percentage)}% overspending`;
+        }
+
+        monthlyBalanceElement.textContent = 
+          `${monthlyNet >= 0 ? "+" : ""}${formatCurrency(Math.abs(monthlyNet))}`;
+
+        const resultsContainer = document.getElementById("results");
+        resultsContainer.classList.add("animate-fade-in");
+        setTimeout(
+          () => resultsContainer.classList.remove("animate-fade-in"),
+          500
+        );
+
+        updateChart(projectedBalances);
+      }
+
+      function updateChart(balances) {
+        const ctx = document.getElementById("savingsChart").getContext("2d");
+
+        // Generate array of future months
+        const months = [];
+        const currentDate = new Date();
+        for (let i = 0; i < balances.length; i++) {
+          const futureDate = new Date(currentDate);
+          futureDate.setMonth(currentDate.getMonth() + i);
+          months.push(
+            futureDate.toLocaleDateString("en-US", {
+              month: "short",
+              year: "numeric",
+            })
+          );
+        }
+
+        if (savingsChart) {
+          savingsChart.destroy();
+        }
+
+        savingsChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: months, // Use the generated months array instead of "Month 1, 2, etc"
+            datasets: [
+              {
+                label: "Projected Savings",
+                data: balances,
+                borderColor: "#219ebc",
+                backgroundColor: "#8ecae6",
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  padding: 20,
+                  font: {
+                    size: 13,
+                    family: 'system-ui'
+                  }
+                }
+              },
+              title: {
+                display: true,
+                text: "Savings Over Time",
+                color: "#023047",
+              },
+              tooltip: {
+                backgroundColor: "white",
+                titleColor: "#023047",
+                bodyColor: "#023047",
+                titleFont: {
+                  size: 13,
+                  weight: "600",
+                  family: "system-ui",
+                },
+                bodyFont: {
+                  size: 12,
+                  family: "system-ui",
+                },
+                padding: 12,
+                borderColor: "#219ebc",
+                borderWidth: 1,
+                displayColors: false,
+                callbacks: {
+                  title: function (tooltipItems) {
+                    return months[tooltipItems[0].dataIndex];
+                  },
+                  label: function (context) {
+                    return `Balance: ${formatCurrency(context.parsed.y)}`;
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return formatCurrency(value);
+                  },
+                  color: "#023047",
+                  padding: 10,
+                  font: {
+                    size: 12
+                  }
+                },
+                grid: {
+                  color: "rgba(142, 202, 230, 0.1)",
+                  drawBorder: false
+                }
+              },
+              x: {
+                ticks: {
+                  color: "#023047",
+                  maxRotation: 45,
+                  minRotation: 45,
+                  padding: 10,
+                  font: {
+                    size: 12
+                  }
+                },
+                grid: {
+                  color: "rgba(142, 202, 230, 0.1)",
+                  drawBorder: false
+                }
+              }
+            },
+          },
+        });
+      }
+
+      // Replace the updateCurrencyLabels function with this improved version
+      function updateCurrencyLabels() {
+        const symbol = getCurrencySymbol();
+        const labels = document.querySelectorAll('.input-label');
+        labels.forEach(label => {
+          const text = label.textContent;
+          if (text.includes('Current Savings')) {
+            label.textContent = `Current Savings (${symbol})`;
+          } else if (text.includes('Monthly Income')) {
+            label.textContent = `Monthly Income (${symbol})`;
+          } else if (text.includes('Monthly Expenses')) {
+            label.textContent = `Monthly Expenses (${symbol})`;
+          }
+        });
+      }
+
+      // Add this JavaScript before the existing script code
+      function validateNumberInput(input) {
+        // Remove any non-numeric characters except decimal point
+        let value = input.value.replace(/[^\d.]/g, '');
+        
+        // Ensure only one decimal point
+        const decimalCount = (value.match(/\./g) || []).length;
+        if (decimalCount > 1) {
+          value = value.replace(/\.(?=.*\.)/g, '');
+        }
+        
+        // Prevent negative values
+        value = Math.max(0, parseFloat(value) || 0);
+        
+        // Update input value
+        input.value = value;
+        
+        // Add visual feedback
+        const errorMessage = input.parentElement.querySelector('.error-message');
+        if (value < 0) {
+          input.classList.add('error');
+          if (!errorMessage) {
+            const msg = document.createElement('div');
+            msg.className = 'error-message';
+            msg.textContent = 'Please enter a positive number';
+            input.parentElement.appendChild(msg);
+          }
+        } else {
+          input.classList.remove('error');
+          if (errorMessage) {
+            errorMessage.remove();
+          }
+        }
+        
+        return value;
+      }
+
+      // Update the event listeners for numeric inputs
+      document.querySelectorAll('input[type="number"]').forEach((input) => {
+        input.addEventListener("input", function(e) {
+          validateNumberInput(this);
+          debouncedCalculate();
+        });
+        
+        input.addEventListener("change", function(e) {
+          validateNumberInput(this);
+          debouncedCalculate();
+        });
+        
+        // Prevent 'e', '+', '-' characters
+        input.addEventListener("keydown", function(e) {
+          if (['e', 'E', '+', '-'].includes(e.key)) {
+            e.preventDefault();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
